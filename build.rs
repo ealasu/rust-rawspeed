@@ -8,6 +8,7 @@ fn main() {
         .define("BUILD_TESTING", "OFF")
         .define("BUILD_FUZZERS", "OFF")
         .define("WITH_OPENMP", "OFF")
+        //.define("WITH_JPEG", "OFF")
         .define("USE_BUNDLED_PUGIXML", "ON")
         .define("PUGIXML_PATH", env::current_dir().unwrap().join("pugixml"))
         .define("CMAKE_BUILD_TYPE", "")
