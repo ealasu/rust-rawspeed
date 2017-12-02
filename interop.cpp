@@ -1,10 +1,11 @@
 #include "RawSpeed-API.h"
 #include "metadata/CameraMetadataException.h"
+#include "interop.h"
 
 using namespace std;
 using namespace rawspeed;
 
-CameraMetaData* rawspeed_metadata_init(const char* filename) {
+void* rawspeed_metadata_init(const char* filename) {
   try {
     return new CameraMetaData(filename);
   } catch (CameraMetadataException &e) {
@@ -16,12 +17,13 @@ CameraMetaData* rawspeed_metadata_init(const char* filename) {
   }
 }
 
-void rawspeed_metadata_delete(CameraMetaData* ptr) {
-  delete ptr;
+void rawspeed_metadata_delete(void* ptr) {
+  delete (CameraMetaData*)ptr;
 }
 
-RawImage* rawspeed_rawimage_decode(const uchar8* data, size_t size, const CameraMetaData* metadata) {
+void* rawspeed_rawimage_decode(const uint8_t* data, size_t size, const void* metadata_ptr) {
   try {
+    auto metadata = (const CameraMetaData*) metadata_ptr;
     Buffer buffer(data, size);
     RawParser parser(&buffer);
     auto decoder = parser.getDecoder();
@@ -37,22 +39,22 @@ RawImage* rawspeed_rawimage_decode(const uchar8* data, size_t size, const Camera
   }
 }
 
-void rawspeed_rawimage_delete(RawImage* ptr) {
-  delete ptr;
+void rawspeed_rawimage_delete(void* ptr) {
+  delete (RawImage*)ptr;
 }
 
-uchar8* rawspeed_rawimage_data(RawImage* ptr) {
-  return (*ptr)->getData();
+uint8_t* rawspeed_rawimage_data(const void* ptr) {
+  return (*(RawImage*)ptr)->getData();
 }
 
-int rawspeed_rawimage_width(RawImage* ptr) {
-  return (*ptr)->dim.x;
+int rawspeed_rawimage_width(const void* ptr) {
+  return (*(RawImage*)ptr)->dim.x;
 }
 
-int rawspeed_rawimage_height(RawImage* ptr) {
-  return (*ptr)->dim.y;
+int rawspeed_rawimage_height(const void* ptr) {
+  return (*(RawImage*)ptr)->dim.y;
 }
 
-int rawspeed_rawimage_pitch(RawImage* ptr) {
-  return (*ptr)->pitch;
+int rawspeed_rawimage_pitch(const void* ptr) {
+  return (*(RawImage*)ptr)->pitch;
 }

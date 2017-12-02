@@ -1,7 +1,9 @@
 extern crate cc;
 extern crate cmake;
+extern crate bindgen;
 
 use std::env;
+use std::path::PathBuf;
 
 fn main() {
     let rawspeed_dst = cmake::Config::new("rawspeed")
@@ -26,4 +28,12 @@ fn main() {
         .include(rawspeed_dst)
         .file("interop.cpp")
         .compile("rawspeed_interop");
+
+    let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
+    bindgen::Builder::default()
+        .header("interop.h")
+        .generate()
+        .expect("Unable to generate bindings")
+        .write_to_file(out_path.join("bindings.rs"))
+        .expect("Couldn't write bindings!");
 }
