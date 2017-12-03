@@ -1,9 +1,7 @@
-use std::ffi::{CStr, CString};
+use std::ffi::CString;
 use std::os::raw::c_void;
-use std::ptr;
 use std::fs::File;
 use std::io::prelude::*;
-use libc::{self, free};
 use rawspeed_sys as ffi;
 use failure::Error;
 use tempdir::TempDir;
@@ -32,6 +30,10 @@ impl CameraMetadata {
         let mut tmp_file = File::create(&file_path)?;
         tmp_file.write_all(ffi::data::CAMERAS_XML.as_bytes())?;
         Ok(Self::init(file_path.to_str().unwrap())?)
+    }
+
+    pub fn as_ptr(&self) -> *mut c_void {
+        self.0
     }
 }
 

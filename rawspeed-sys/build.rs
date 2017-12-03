@@ -12,6 +12,7 @@ fn main() {
         .define("BUILD_TESTING", "OFF")
         .define("BUILD_FUZZERS", "OFF")
         .define("WITH_OPENMP", "OFF")
+        .define("WITH_PTHREADS", "OFF")
         .define("USE_BUNDLED_PUGIXML", "ON")
         .define("PUGIXML_PATH", env::current_dir().unwrap().join("pugixml"))
         .define("CMAKE_BUILD_TYPE", "")
@@ -20,6 +21,8 @@ fn main() {
     println!("cargo:rustc-link-lib=static=rawspeed");
     println!("cargo:rustc-link-search=native={}", rawspeed_dst.join("build/pugixml/pugixml-build").display());
     println!("cargo:rustc-link-lib=static=pugixml");
+    println!("cargo:rustc-link-lib=jpeg");
+    println!("cargo:rustc-link-lib=z");
 
     cc::Build::new()
         .cpp(true)
