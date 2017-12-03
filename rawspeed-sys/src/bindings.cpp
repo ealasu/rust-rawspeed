@@ -1,6 +1,6 @@
 #include "RawSpeed-API.h"
 #include "metadata/CameraMetadataException.h"
-#include "interop.h"
+#include "bindings.h"
 
 using namespace std;
 using namespace rawspeed;

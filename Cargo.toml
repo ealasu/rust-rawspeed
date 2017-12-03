@@ -5,3 +5,4 @@ version = "0.1.0"
 [dependencies]
 libc = "0.2"
 rawspeed-sys = { path = "rawspeed-sys", version = "0.1.0" }
+failure = "0.1"
