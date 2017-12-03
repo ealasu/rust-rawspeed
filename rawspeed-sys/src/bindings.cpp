@@ -5,24 +5,24 @@
 using namespace std;
 using namespace rawspeed;
 
-void* rawspeed_metadata_init(const char* filename, const char** error_msg) {
+void* rawspeed_metadata_init(const char* filename, char** error_msg) {
   *error_msg = nullptr;
   try {
     return new CameraMetaData(filename);
   } catch (exception &e) {
-    string c(e.what());
-    *error_msg = c.data();
+    auto w = new string(e.what());
+    *error_msg = w->data();
     return nullptr;
   } catch (...) {
     return nullptr;
   }
 }
 
-void rawspeed_metadata_delete(void* ptr) {
+void rawspeed_metadata_free(void* ptr) {
   delete (CameraMetaData*)ptr;
 }
 
-void* rawspeed_rawimage_decode(const uint8_t* data, size_t size, const void* metadata_ptr, const char** error_msg) {
+void* rawspeed_rawimage_decode(const uint8_t* data, size_t size, const void* metadata_ptr, char** error_msg) {
   *error_msg = nullptr;
   try {
     auto metadata = (const CameraMetaData*) metadata_ptr;
@@ -37,14 +37,15 @@ void* rawspeed_rawimage_decode(const uint8_t* data, size_t size, const void* met
     raw->scaleBlackWhite();
     return new RawImage(raw);
   } catch (exception &e) {
-    *error_msg = e.what();
+    auto w = new string(e.what());
+    *error_msg = w->data();
     return nullptr;
   } catch (...) {
     return nullptr;
   }
 }
 
-void rawspeed_rawimage_delete(void* ptr) {
+void rawspeed_rawimage_free(void* ptr) {
   delete (RawImage*)ptr;
 }
 

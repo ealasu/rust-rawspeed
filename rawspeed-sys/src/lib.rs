@@ -5,3 +5,7 @@
 extern crate libc;
 
 include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
+
+pub mod data {
+    pub static CAMERAS_XML: &str = include_str!("../rawspeed/data/cameras.xml");
+}

@@ -6,6 +6,8 @@ use std::env;
 use std::path::PathBuf;
 
 fn main() {
+    let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
+
     let rawspeed_dst = cmake::Config::new("rawspeed")
         .define("BUILD_TESTING", "OFF")
         .define("BUILD_FUZZERS", "OFF")
@@ -21,7 +23,7 @@ fn main() {
 
     cc::Build::new()
         .cpp(true)
-        .flag("-std=c++14")
+        .flag("-std=c++1z")
         .object(rawspeed_dst.join("build/src/librawspeed.a"))
         .include("src")
         .include("rawspeed/src/librawspeed")
@@ -30,7 +32,6 @@ fn main() {
         .file("src/bindings.cpp")
         .compile("rawspeed_interop");
 
-    let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
     bindgen::Builder::default()
         .header("src/bindings.h")
         .generate()
