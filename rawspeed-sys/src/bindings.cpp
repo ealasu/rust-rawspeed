@@ -5,12 +5,13 @@
 using namespace std;
 using namespace rawspeed;
 
-void* rawspeed_metadata_init(const char* filename) {
+void* rawspeed_metadata_init(const char* filename, const char** error_msg) {
+  *error_msg = nullptr;
   try {
     return new CameraMetaData(filename);
-  } catch (CameraMetadataException &e) {
-    // Reading metadata failed. e.what() will contain error message.
-    // TODO: include error details
+  } catch (exception &e) {
+    string c(e.what());
+    *error_msg = c.data();
     return nullptr;
   } catch (...) {
     return nullptr;
@@ -21,7 +22,8 @@ void rawspeed_metadata_delete(void* ptr) {
   delete (CameraMetaData*)ptr;
 }
 
-void* rawspeed_rawimage_decode(const uint8_t* data, size_t size, const void* metadata_ptr) {
+void* rawspeed_rawimage_decode(const uint8_t* data, size_t size, const void* metadata_ptr, const char** error_msg) {
+  *error_msg = nullptr;
   try {
     auto metadata = (const CameraMetaData*) metadata_ptr;
     Buffer buffer(data, size);
@@ -34,6 +36,9 @@ void* rawspeed_rawimage_decode(const uint8_t* data, size_t size, const void* met
     auto raw = decoder->mRaw;
     raw->scaleBlackWhite();
     return new RawImage(raw);
+  } catch (exception &e) {
+    *error_msg = e.what();
+    return nullptr;
   } catch (...) {
     return nullptr;
   }

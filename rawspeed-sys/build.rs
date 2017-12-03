@@ -13,17 +13,20 @@ fn main() {
         .define("USE_BUNDLED_PUGIXML", "ON")
         .define("PUGIXML_PATH", env::current_dir().unwrap().join("pugixml"))
         .define("CMAKE_BUILD_TYPE", "")
-        .build()
-        .join("build/src");
+        .build();
+    println!("cargo:rustc-link-search=native={}", rawspeed_dst.join("build/src").display());
+    println!("cargo:rustc-link-lib=static=rawspeed");
+    println!("cargo:rustc-link-search=native={}", rawspeed_dst.join("build/pugixml/pugixml-build").display());
+    println!("cargo:rustc-link-lib=static=pugixml");
 
     cc::Build::new()
         .cpp(true)
         .flag("-std=c++14")
-        .object(rawspeed_dst.join("librawspeed.a"))
+        .object(rawspeed_dst.join("build/src/librawspeed.a"))
         .include("src")
         .include("rawspeed/src/librawspeed")
         .include("rawspeed/src/external")
-        .include(rawspeed_dst)
+        .include(rawspeed_dst.join("build/src"))
         .file("src/bindings.cpp")
         .compile("rawspeed_interop");
 
