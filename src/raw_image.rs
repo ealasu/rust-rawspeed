@@ -3,7 +3,13 @@ use std::slice;
 use rawspeed_sys as ffi;
 use ::camera_metadata::CameraMetadata;
 
-pub struct RawImage(*mut c_void);
+pub struct RawImage {
+    ptr: *mut c_void,
+    data_ptr: *const u8,
+    width: usize,
+    height: usize,
+    pitch: usize,
+}
 
 #[derive(Debug, Fail)]
 #[fail(display = "failed to decode raw image: {}", _0)]
@@ -19,33 +25,35 @@ impl RawImage {
                 data.len(),
                 camera_meta.as_ptr())
         };
-        Ok(RawImage(ptr))
+        let data_ptr = unsafe { ffi::rawspeed_rawimage_data(ptr) };
+        Ok(RawImage {
+            ptr,
+            data_ptr,
+            width: unsafe { ffi::rawspeed_rawimage_width(ptr) as usize },
+            height: unsafe { ffi::rawspeed_rawimage_height(ptr) as usize },
+            pitch: unsafe { ffi::rawspeed_rawimage_pitch(ptr) as usize },
+        })
     }
 
+    #[inline(always)]
     pub fn data(&self) -> &[u8] {
         unsafe {
-            let ptr = ffi::rawspeed_rawimage_data(self.0);
-            slice::from_raw_parts(ptr, self.pitch() as usize * self.height() as usize)
+            slice::from_raw_parts(self.data_ptr, self.pitch * self.height)
         }
     }
 
-    pub fn height(&self) -> u32 {
-        unsafe { ffi::rawspeed_rawimage_height(self.0) as u32 }
-    }
-
-    pub fn width(&self) -> u32 {
-        unsafe { ffi::rawspeed_rawimage_width(self.0) as u32 }
-    }
-
-    pub fn pitch(&self) -> u32 {
-        unsafe { ffi::rawspeed_rawimage_pitch(self.0) as u32 }
-    }
+    #[inline(always)]
+    pub fn width(&self) -> usize { self.width }
+    #[inline(always)]
+    pub fn height(&self) -> usize { self.height }
+    #[inline(always)]
+    pub fn pitch(&self) -> usize { self.pitch }
 }
 
 impl Drop for RawImage {
     fn drop(&mut self) {
         unsafe {
-            ffi::rawspeed_rawimage_free(self.0);
+            ffi::rawspeed_rawimage_free(self.ptr);
         }
     }
 }

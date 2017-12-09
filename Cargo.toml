@@ -7,3 +7,11 @@ libc = "0.2"
 rawspeed-sys = { path = "rawspeed-sys", version = "0.1.0" }
 failure = "0.1"
 tempdir = "0.3"
+
+[dev-dependencies]
+bencher = "0.1"
+image = { path = "../image-tools/image" }
+
+[[bench]]
+name = "example"
+harness = false
