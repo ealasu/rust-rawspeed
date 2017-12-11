@@ -1,6 +1,7 @@
 extern crate libc;
 #[macro_use] extern crate failure;
 extern crate tempdir;
+extern crate image;
 extern crate rawspeed_sys;
 
 #[macro_use] mod macros;

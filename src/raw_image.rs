@@ -1,14 +1,24 @@
 use std::os::raw::c_void;
 use std::slice;
+use std::convert::AsRef;
+use image::{ImageDimensions, ImageSlice};
 use rawspeed_sys as ffi;
 use ::camera_metadata::CameraMetadata;
 
 pub struct RawImage {
-    ptr: *mut c_void,
-    data_ptr: *const u8,
-    width: usize,
-    height: usize,
-    pitch: usize,
+    pub dimensions: ImageDimensions,
+    data_ptr: *const u16,
+    data_len: usize,
+    obj_ptr: *mut c_void,
+}
+
+impl<'a> AsRef<ImageSlice<'a, u16>> for RawImage {
+    #[inline(always)]
+    fn as_ref(&self) -> &ImageSlice<'a, u16> {
+        unsafe {
+            &*(self as *const RawImage as *const ImageSlice<u16>)
+        }
+    }
 }
 
 #[derive(Debug, Fail)]
@@ -17,7 +27,7 @@ pub struct DecodeError(String);
 
 impl RawImage {
     pub fn decode(data: &[u8], camera_meta: &CameraMetadata) -> Result<Self, DecodeError> {
-        let ptr = unsafe {
+        let obj_ptr = unsafe {
             ffi_call_fallible!(
                 ffi::rawspeed_rawimage_decode,
                 DecodeError,
@@ -25,35 +35,40 @@ impl RawImage {
                 data.len(),
                 camera_meta.as_ptr())
         };
-        let data_ptr = unsafe { ffi::rawspeed_rawimage_data(ptr) };
+        let dimensions = ImageDimensions {
+            width: unsafe { ffi::rawspeed_rawimage_width(obj_ptr) as usize },
+            height: unsafe { ffi::rawspeed_rawimage_height(obj_ptr) as usize },
+            pitch: unsafe { ffi::rawspeed_rawimage_pitch(obj_ptr) as usize } / 2,
+        };
+        let data_ptr = unsafe { ffi::rawspeed_rawimage_data(obj_ptr) as *const u16 };
+        let data_len = dimensions.pitch * dimensions.height;
         Ok(RawImage {
-            ptr,
+            dimensions,
             data_ptr,
-            width: unsafe { ffi::rawspeed_rawimage_width(ptr) as usize },
-            height: unsafe { ffi::rawspeed_rawimage_height(ptr) as usize },
-            pitch: unsafe { ffi::rawspeed_rawimage_pitch(ptr) as usize },
+            data_len,
+            obj_ptr,
         })
     }
 
     #[inline(always)]
     pub fn data(&self) -> &[u8] {
         unsafe {
-            slice::from_raw_parts(self.data_ptr, self.pitch * self.height)
+            slice::from_raw_parts(self.data_ptr as *const u8, self.data_len * 2)
         }
     }
 
     #[inline(always)]
-    pub fn width(&self) -> usize { self.width }
-    #[inline(always)]
-    pub fn height(&self) -> usize { self.height }
-    #[inline(always)]
-    pub fn pitch(&self) -> usize { self.pitch }
+    pub fn pixels(&self) -> &[u16] {
+        unsafe {
+            slice::from_raw_parts(self.data_ptr, self.data_len)
+        }
+    }
 }
 
 impl Drop for RawImage {
     fn drop(&mut self) {
         unsafe {
-            ffi::rawspeed_rawimage_free(self.ptr);
+            ffi::rawspeed_rawimage_free(self.obj_ptr);
         }
     }
 }
@@ -79,9 +94,14 @@ mod tests {
         let mut data = Vec::new();
         file.read_to_end(&mut data).unwrap();
         let res = RawImage::decode(&data, &meta).unwrap();
-        assert_eq!(res.width(), 5494);
-        assert_eq!(res.height(), 3666);
-        assert_eq!(res.pitch(), 11136);
+        assert_eq!(res.dimensions.width, 5494);
+        assert_eq!(res.dimensions.height, 3666);
+        assert_eq!(res.dimensions.pitch, 5568);
         assert_eq!(res.data().len(), 40824576);
+        assert_eq!(res.as_ref().dimensions, res.dimensions);
+        assert_eq!(res.as_ref().pixels.len(), res.pixels().len());
+        assert_eq!(res.as_ref().pixels[0], res.pixels()[0]);
+        let len = res.pixels().len();
+        assert_eq!(res.as_ref().pixels[len-1], res.pixels()[len-1]);
     }
 }
