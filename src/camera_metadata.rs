@@ -32,7 +32,7 @@ impl CameraMetadata {
         Ok(Self::init(file_path.to_str().unwrap())?)
     }
 
-    pub fn as_ptr(&self) -> *mut c_void {
+    pub fn as_ptr(&self) -> *const c_void {
         self.0
     }
 }
@@ -43,6 +43,13 @@ impl Drop for CameraMetadata {
             ffi::rawspeed_metadata_free(self.0);
         }
     }
+}
+
+unsafe impl Sync for CameraMetadata {}
+
+lazy_static! {
+    pub static ref DEFAULT_CAMERA_METADATA: CameraMetadata =
+        CameraMetadata::default().unwrap();
 }
 
 #[cfg(test)]
@@ -57,6 +64,7 @@ mod tests {
 
     #[test]
     fn test_success() {
-        CameraMetadata::default().unwrap();
+        CameraMetadata::default().unwrap().as_ptr();
+        DEFAULT_CAMERA_METADATA.as_ptr();
     }
 }
