@@ -6,7 +6,7 @@ extern crate image;
 use std::fs::File;
 use std::io::prelude::*;
 use bencher::Bencher;
-use rawspeed::RawImage;
+use rawspeed::*;
 use image::Image;
 
 fn decode_raw_image(bench: &mut Bencher) {
@@ -14,7 +14,7 @@ fn decode_raw_image(bench: &mut Bencher) {
         let mut file = File::open("test_data/test.cr2").unwrap();
         let mut data = Vec::new();
         file.read_to_end(&mut data).unwrap();
-        RawImage::decode(&data).unwrap()
+        decode(&data).unwrap()
     })
 }
 
@@ -23,7 +23,7 @@ fn decode_raw_image_clone(bench: &mut Bencher) {
         let mut file = File::open("test_data/test.cr2").unwrap();
         let mut data = Vec::new();
         file.read_to_end(&mut data).unwrap();
-        RawImage::decode(&data).unwrap().pixels().to_vec()
+        decode(&data).unwrap().pixels.to_vec()
     })
 }
 

@@ -7,7 +7,7 @@ extern crate rawspeed_sys;
 
 #[macro_use] mod macros;
 pub mod camera_metadata;
-pub mod raw_image;
+pub mod decode;
 
 pub use camera_metadata::*;
-pub use raw_image::RawImage;
+pub use decode::*;
