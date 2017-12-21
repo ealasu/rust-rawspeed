@@ -62,6 +62,8 @@ mod tests {
         assert_eq!(res.dimensions.pitch, 5568);
         assert_eq!(res.as_bytes().len(), 40824576);
         assert_eq!(res.pixels[0], 140);
+        assert_eq!(*res.pixel_at(1, 100), 544);
+        assert_eq!(*res.pixel_at(200, 1), 611);
         assert_eq!(res.pixels[res.pixels.len()-1], 2076);
     }
 }
