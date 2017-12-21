@@ -1,5 +1,5 @@
 use std::slice;
-use image::{ImageDimensions, OwnedImage};
+use ndarray::Array2;
 use rawspeed_sys as ffi;
 use ::camera_metadata::{CameraMetadata, DEFAULT_CAMERA_METADATA};
 
@@ -7,11 +7,11 @@ use ::camera_metadata::{CameraMetadata, DEFAULT_CAMERA_METADATA};
 #[fail(display = "failed to decode raw image: {}", _0)]
 pub struct DecodeError(String);
 
-pub fn decode(data: &[u8]) -> Result<OwnedImage<u16>, DecodeError> {
+pub fn decode(data: &[u8]) -> Result<Array2<u16>, DecodeError> {
     decode_with_metadata(data, &DEFAULT_CAMERA_METADATA)
 }
 
-pub fn decode_with_metadata(data: &[u8], camera_meta: &CameraMetadata) -> Result<OwnedImage<u16>, DecodeError> {
+pub fn decode_with_metadata(data: &[u8], camera_meta: &CameraMetadata) -> Result<Array2<u16>, DecodeError> {
     let obj_ptr = unsafe {
         ffi_call_fallible!(
             ffi::rawspeed_rawimage_decode,
@@ -20,22 +20,21 @@ pub fn decode_with_metadata(data: &[u8], camera_meta: &CameraMetadata) -> Result
             data.len(),
             camera_meta.as_ptr())
     };
-    let dimensions = ImageDimensions {
-        width: unsafe { ffi::rawspeed_rawimage_width(obj_ptr) as usize },
-        height: unsafe { ffi::rawspeed_rawimage_height(obj_ptr) as usize },
-        pitch: unsafe { ffi::rawspeed_rawimage_pitch(obj_ptr) as usize } / 2,
-    };
-    let data_ptr = unsafe { ffi::rawspeed_rawimage_data(obj_ptr) as *mut u16 };
-    let data_len = dimensions.pitch * dimensions.height;
-    let pixels_slice = unsafe { slice::from_raw_parts(data_ptr, data_len) };
-    let pixels = pixels_slice.to_vec();
+    let width = unsafe { ffi::rawspeed_rawimage_width(obj_ptr) } as usize;
+    let height = unsafe { ffi::rawspeed_rawimage_height(obj_ptr) } as usize;
+    let pitch = unsafe { ffi::rawspeed_rawimage_pitch(obj_ptr) } as usize / 2;
+    let data_ptr = unsafe { ffi::rawspeed_rawimage_data(obj_ptr) } as *mut u16;
+    let data_len = pitch * height;
+    let data = unsafe { slice::from_raw_parts(data_ptr, data_len) };
+    let mut pixels = Vec::with_capacity(width * height);
+    for y in 0..height {
+        let offset = y * pitch;
+        pixels.extend(&data[offset..offset + width]);
+    }
     unsafe {
         ffi::rawspeed_rawimage_free(obj_ptr);
     }
-    Ok(OwnedImage {
-        dimensions,
-        pixels,
-    })
+    Ok(Array2::from_shape_vec((height, width), pixels).unwrap())
 }
 
 #[cfg(test)]
@@ -43,7 +42,6 @@ mod tests {
     use super::*;
     use std::fs::File;
     use std::io::prelude::*;
-    use image::Image;
 
     #[test]
     fn test_err() {
@@ -57,13 +55,13 @@ mod tests {
         let mut data = Vec::new();
         file.read_to_end(&mut data).unwrap();
         let res = decode(&data).unwrap();
-        assert_eq!(res.dimensions.width, 5494);
-        assert_eq!(res.dimensions.height, 3666);
-        assert_eq!(res.dimensions.pitch, 5568);
-        assert_eq!(res.as_bytes().len(), 40824576);
-        assert_eq!(res.pixels[0], 140);
-        assert_eq!(*res.pixel_at(1, 100), 544);
-        assert_eq!(*res.pixel_at(200, 1), 611);
-        assert_eq!(res.pixels[res.pixels.len()-1], 2076);
+        // height
+        assert_eq!(res.shape()[0], 3666);
+        // width
+        assert_eq!(res.shape()[1], 5494);
+        assert_eq!(res[[0, 0]], 140);
+        assert_eq!(res[[100, 1]], 544);
+        assert_eq!(res[[1, 200]], 611);
+        assert_eq!(res[[3665, 5493]], 43);
     }
 }

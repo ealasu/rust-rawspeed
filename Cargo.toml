@@ -7,8 +7,8 @@ libc = "0.2"
 rawspeed-sys = { path = "rawspeed-sys", version = "0.1.0" }
 failure = "0.1"
 tempdir = "0.3"
-image = { path = "../image-tools/image" }
 lazy_static = "1.0"
+ndarray = "0.10"
 
 [dev-dependencies]
 bencher = "0.1"
