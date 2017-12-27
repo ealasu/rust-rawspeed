@@ -34,7 +34,6 @@ void* rawspeed_rawimage_decode(const uint8_t* data, size_t size, const void* met
     decoder->decodeRaw();
     decoder->decodeMetaData(metadata);
     auto raw = decoder->mRaw;
-    raw->scaleBlackWhite();
     return new RawImage(raw);
   } catch (exception &e) {
     auto w = new string(e.what());
@@ -49,18 +48,15 @@ void rawspeed_rawimage_free(void* ptr) {
   delete (RawImage*)ptr;
 }
 
-uint8_t* rawspeed_rawimage_data(const void* ptr) {
-  return (*(RawImage*)ptr)->getData();
-}
-
-int rawspeed_rawimage_width(const void* ptr) {
-  return (*(RawImage*)ptr)->dim.x;
-}
-
-int rawspeed_rawimage_height(const void* ptr) {
-  return (*(RawImage*)ptr)->dim.y;
-}
-
-int rawspeed_rawimage_pitch(const void* ptr) {
-  return (*(RawImage*)ptr)->pitch;
+RawspeedImageInfo rawspeed_rawimage_info(const void* ptr) {
+  auto image = (RawImage*)ptr;
+  RawspeedImageInfo info;
+  info.data = (*image)->getDataUncropped(0, 0);
+  info.width = (*image)->getUncroppedDim().x;
+  info.height = (*image)->getUncroppedDim().y;
+  info.pitch = (*image)->pitch;
+  info.cropped_data = (*image)->getData();
+  info.cropped_width = (*image)->dim.x;
+  info.cropped_height = (*image)->dim.y;
+  return info;
 }
