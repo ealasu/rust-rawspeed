@@ -1,4 +1,5 @@
 use std::slice;
+use std::os::raw::c_void;
 use ndarray::Array2;
 use rawspeed_sys as ffi;
 use ::camera_metadata::{CameraMetadata, DEFAULT_CAMERA_METADATA};
@@ -7,33 +8,59 @@ use ::camera_metadata::{CameraMetadata, DEFAULT_CAMERA_METADATA};
 #[fail(display = "failed to decode raw image: {}", _0)]
 pub struct DecodeError(String);
 
+pub struct RawImage {
+    obj_ptr: *mut c_void,
+    pub info: ffi::RawspeedImageInfo,
+}
+
+impl RawImage {
+    pub fn decode(data: &[u8], camera_meta: &CameraMetadata) -> Result<Self, DecodeError> {
+        let obj_ptr = unsafe {
+            ffi_call_fallible!(
+                ffi::rawspeed_rawimage_decode,
+                DecodeError,
+                data.as_ptr(),
+                data.len(),
+                camera_meta.as_ptr())
+        };
+        let info = unsafe { ffi::rawspeed_rawimage_info(obj_ptr) };
+        Ok(RawImage {
+            obj_ptr,
+            info,
+        })
+    }
+
+    #[inline]
+    pub fn data(&self) -> &[u16] {
+        let data_ptr = self.info.data as *mut u16;
+        let data_len = self.info.pitch as usize * self.info.height as usize / 2;
+        unsafe { slice::from_raw_parts(data_ptr, data_len) }
+    }
+}
+
+impl Drop for RawImage {
+    fn drop(&mut self) {
+        unsafe {
+            ffi::rawspeed_rawimage_free(self.obj_ptr);
+        }
+    }
+}
+
 pub fn decode(data: &[u8]) -> Result<Array2<u16>, DecodeError> {
     decode_with_metadata(data, &DEFAULT_CAMERA_METADATA)
 }
 
 pub fn decode_with_metadata(data: &[u8], camera_meta: &CameraMetadata) -> Result<Array2<u16>, DecodeError> {
-    let obj_ptr = unsafe {
-        ffi_call_fallible!(
-            ffi::rawspeed_rawimage_decode,
-            DecodeError,
-            data.as_ptr(),
-            data.len(),
-            camera_meta.as_ptr())
-    };
-    let info = unsafe { ffi::rawspeed_rawimage_info(obj_ptr) };
+    let raw_image = RawImage::decode(data, camera_meta)?;
+    let info = raw_image.info;
     let width = info.width as usize;
     let height = info.height as usize;
     let pitch = info.pitch as usize / 2;
-    let data_ptr = info.data as *mut u16;
-    let data_len = pitch * height;
-    let data = unsafe { slice::from_raw_parts(data_ptr, data_len) };
+    let data = raw_image.data();
     let mut pixels = Vec::with_capacity(width * height);
     for y in 0..height {
         let offset = y * pitch;
         pixels.extend(&data[offset..offset + width]);
-    }
-    unsafe {
-        ffi::rawspeed_rawimage_free(obj_ptr);
     }
     Ok(Array2::from_shape_vec((height, width), pixels).unwrap())
 }
