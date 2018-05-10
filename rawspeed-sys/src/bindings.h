@@ -17,7 +17,7 @@ extern "C" {
 
 void* rawspeed_metadata_init(const char* filename, char** error_msg);
 void rawspeed_metadata_free(void* ptr);
-void* rawspeed_rawimage_decode(const uint8_t* data, size_t size, const void* metadata_ptr, char** error_msg);
+void* rawspeed_rawimage_decode(const uint8_t* data, size_t size, const void* metadata_ptr, int scale, char** error_msg);
 void rawspeed_rawimage_free(void* ptr);
 RawspeedImageInfo rawspeed_rawimage_info(const void* ptr);
 //uint8_t* rawspeed_rawimage_data(const void* ptr);

@@ -13,7 +13,10 @@ fn main() {
         .define("BUILD_FUZZERS", "OFF")
         .define("WITH_OPENMP", "OFF")
         .define("WITH_PTHREADS", "OFF")
+        .define("WITH_JPEG", "ON")
+        .define("WITH_ZLIB", "ON")
         .define("USE_BUNDLED_PUGIXML", "ON")
+        .define("CMAKE_CXX_FLAGS", "-w")
         .define("PUGIXML_PATH", env::current_dir().unwrap().join("pugixml"))
         .define("CMAKE_BUILD_TYPE", "")
         .build();
@@ -24,6 +27,7 @@ fn main() {
     println!("cargo:rustc-link-lib=jpeg");
     println!("cargo:rustc-link-lib=z");
 
+    println!("Compiling src");
     cc::Build::new()
         .cpp(true)
         .flag("-std=c++1z")
@@ -35,6 +39,7 @@ fn main() {
         .file("src/bindings.cpp")
         .compile("rawspeed_interop");
 
+    println!("Generating bindings");
     bindgen::Builder::default()
         .header("src/bindings.h")
         .generate()

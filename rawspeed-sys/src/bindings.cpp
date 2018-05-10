@@ -22,7 +22,7 @@ void rawspeed_metadata_free(void* ptr) {
   delete (CameraMetaData*)ptr;
 }
 
-void* rawspeed_rawimage_decode(const uint8_t* data, size_t size, const void* metadata_ptr, char** error_msg) {
+void* rawspeed_rawimage_decode(const uint8_t* data, size_t size, const void* metadata_ptr, int scale, char** error_msg) {
   *error_msg = nullptr;
   try {
     auto metadata = (const CameraMetaData*) metadata_ptr;
@@ -30,9 +30,16 @@ void* rawspeed_rawimage_decode(const uint8_t* data, size_t size, const void* met
     RawParser parser(&buffer);
     auto decoder = parser.getDecoder();
     decoder->failOnUnknown = true;
+    decoder->applyCrop = true;
+    if (scale) {
+      decoder->interpolateBadPixels = true;
+    }
     decoder->checkSupport(metadata);
     decoder->decodeRaw();
     decoder->decodeMetaData(metadata);
+    if (scale) {
+      decoder->mRaw->scaleBlackWhite();
+    }
     auto raw = decoder->mRaw;
     return new RawImage(raw);
   } catch (exception &e) {
