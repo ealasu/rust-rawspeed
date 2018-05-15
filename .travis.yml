@@ -8,6 +8,7 @@ matrix:
   allow_failures:
     - rust: nightly
   fast_finish: true
+  env: COMPILER_NAME=gcc CXX=g++-5 CC=gcc-5
   include:
     addons:
       apt:
