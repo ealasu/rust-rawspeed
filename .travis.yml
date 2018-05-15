@@ -7,3 +7,8 @@ matrix:
   allow_failures:
     - rust: nightly
   fast_finish: true
+  include:
+    addons:
+      apt:
+        packages:
+          - g++-5
