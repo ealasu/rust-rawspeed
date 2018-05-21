@@ -4,6 +4,7 @@ extern crate libc;
 extern crate tempdir;
 extern crate ndarray;
 extern crate rawspeed_sys;
+#[cfg(test)] extern crate reqwest;
 
 #[macro_use] mod macros;
 pub mod camera_metadata;

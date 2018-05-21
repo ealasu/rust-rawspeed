@@ -12,6 +12,7 @@ ndarray = "0.11"
 
 [dev-dependencies]
 bencher = "0.1"
+reqwest = "*"
 
 [[bench]]
 name = "example"

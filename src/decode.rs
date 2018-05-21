@@ -79,6 +79,7 @@ mod tests {
     use super::*;
     use std::fs::File;
     use std::io::prelude::*;
+    use reqwest;
 
     #[test]
     fn err() {
@@ -87,7 +88,15 @@ mod tests {
     }
 
     fn test_data() -> Vec<u8> {
-        let mut file = File::open("test_data/test.cr2").unwrap();
+        let url = "https://raw.pixls.us/getfile.php/799/nice/Canon%20-%20EOS%206D%20-%20RAW.CR2";
+        let file_name = "target/test-data.cr2";
+        let mut file = File::open(file_name).or_else(|_| {
+            println!("Downloading test data...");
+            let mut file = File::create(file_name).unwrap();
+            reqwest::get(url).unwrap().copy_to(&mut file).unwrap();
+            println!("Finished downloading test data.");
+            File::open(file_name)
+        }).unwrap();
         let mut data = Vec::new();
         file.read_to_end(&mut data).unwrap();
         data
@@ -99,7 +108,7 @@ mod tests {
         let res = img.view_uncropped();
         assert_eq!(res.shape()[0], 3708);
         assert_eq!(res.shape()[1], 5568);
-        let expected_points = [2049, 2059, 2055, 2058];
+        let expected_points = [2045, 2043, 2058, 2984];
         let actual_points = [
             res[[0, 0]],
             res[[100, 1]],
@@ -121,11 +130,7 @@ mod tests {
                 v[[1, 200]],
                 v[[3665, 5493]],
             ],
-            [
-                2076,
-                2156,
-                2169,
-                2057,
-            ]);
+            [4765, 8709, 9842, 2992]
+        );
     }
 }
