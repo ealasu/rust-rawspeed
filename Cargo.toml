@@ -8,7 +8,7 @@ rawspeed-sys = { path = "rawspeed-sys", version = "0.1.0" }
 failure = "0.1"
 tempdir = "0.3"
 lazy_static = "1.0"
-ndarray = "0.11"
+ndarray = "0.13"
 
 [dev-dependencies]
 bencher = "0.1"
